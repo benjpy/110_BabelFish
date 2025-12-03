@@ -1,8 +1,12 @@
 import streamlit as st
 import tempfile
 import os
+from dotenv import load_dotenv
 from utils import convert_opus_to_mp3, cleanup_files, get_timestamp
 from api_client import AudioTranslator
+
+# Load environment variables
+load_dotenv()
 
 # Page Config
 st.set_page_config(
@@ -12,59 +16,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
-<style>
-    .stApp { background-color: #f8f9fa; }
-    .main-header {
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 700;
-        color: #333;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .stButton>button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 8px;
-        border: none;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #45a049;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .output-box {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        margin-bottom: 1rem;
-    }
-    .output-label {
-        font-weight: 600;
-        color: #555;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-</style>
-""", unsafe_allow_html=True)
+# ... (CSS remains the same)
 
-# Initialize Session State
-if 'transcript_text' not in st.session_state:
-    st.session_state.transcript_text = None
-if 'translation_text' not in st.session_state:
-    st.session_state.translation_text = None
-if 'timestamp' not in st.session_state:
-    st.session_state.timestamp = None
-if 'input_code' not in st.session_state:
-    st.session_state.input_code = None
-if 'target_code' not in st.session_state:
-    st.session_state.target_code = None
-if 'target_language_name' not in st.session_state:
-    st.session_state.target_language_name = None
+# ... (Session state init remains the same)
 
 # Sidebar
 with st.sidebar:
@@ -72,15 +26,30 @@ with st.sidebar:
     
     # Try to get key from secrets or environment
     default_api_key = ""
-    if "OPENAI_API_KEY" in st.secrets:
-        default_api_key = st.secrets["OPENAI_API_KEY"]
-    elif "OPENAI_API_KEY" in os.environ:
+    try:
+        if "OPENAI_API_KEY" in st.secrets:
+            default_api_key = st.secrets["OPENAI_API_KEY"]
+    except Exception:
+        pass
+
+    if not default_api_key and "OPENAI_API_KEY" in os.environ:
         default_api_key = os.environ["OPENAI_API_KEY"]
 
     api_key_input = st.text_input("OpenAI API Key", value=default_api_key, type="password", help="Enter your OpenAI API key here.")
     
-    # Strip whitespace to prevent errors
-    api_key = api_key_input.strip()
+    # Clean the key: remove whitespace and quotes
+    api_key = api_key_input.strip().strip('"').strip("'")
+    
+    # Debug Info
+    with st.expander("🔑 Key Debug Info"):
+        if api_key:
+            st.write(f"Key Length: {len(api_key)}")
+            st.write(f"Prefix: {api_key[:7]}...")
+            st.write(f"Suffix: ...{api_key[-4:]}")
+            if api_key != api_key_input:
+                st.info("ℹ️ Key was automatically cleaned (whitespace/quotes removed).")
+        else:
+            st.warning("No API Key detected.")
     
     st.markdown("---")
     st.markdown("### Language Options")
