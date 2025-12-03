@@ -16,9 +16,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ... (CSS remains the same)
+# Custom CSS
+st.markdown("""
+<style>
+    .stApp { background-color: #f8f9fa; }
+    .main-header {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 700;
+        color: #333;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .output-box {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+    }
+    .output-label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# ... (Session state init remains the same)
+# Initialize Session State
+if 'transcript_text' not in st.session_state:
+    st.session_state.transcript_text = None
+if 'translation_text' not in st.session_state:
+    st.session_state.translation_text = None
+if 'timestamp' not in st.session_state:
+    st.session_state.timestamp = None
+if 'input_code' not in st.session_state:
+    st.session_state.input_code = None
+if 'target_code' not in st.session_state:
+    st.session_state.target_code = None
+if 'target_language_name' not in st.session_state:
+    st.session_state.target_language_name = None
 
 # Sidebar
 with st.sidebar:
