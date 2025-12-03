@@ -69,7 +69,18 @@ if 'target_language_name' not in st.session_state:
 # Sidebar
 with st.sidebar:
     st.title("⚙️ Settings")
-    api_key = st.text_input("OpenAI API Key", type="password", help="Enter your OpenAI API key here.")
+    
+    # Try to get key from secrets or environment
+    default_api_key = ""
+    if "OPENAI_API_KEY" in st.secrets:
+        default_api_key = st.secrets["OPENAI_API_KEY"]
+    elif "OPENAI_API_KEY" in os.environ:
+        default_api_key = os.environ["OPENAI_API_KEY"]
+
+    api_key_input = st.text_input("OpenAI API Key", value=default_api_key, type="password", help="Enter your OpenAI API key here.")
+    
+    # Strip whitespace to prevent errors
+    api_key = api_key_input.strip()
     
     st.markdown("---")
     st.markdown("### Language Options")
