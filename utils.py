@@ -2,17 +2,18 @@ import os
 import subprocess
 from datetime import datetime
 
-def convert_opus_to_mp3(opus_path):
+def convert_to_mp3(input_path):
     """
-    Converts an .opus file to .mp3 using ffmpeg.
+    Converts an audio file to .mp3 using ffmpeg.
     Returns the path to the new .mp3 file.
     Raises subprocess.CalledProcessError if conversion fails.
     """
-    mp3_path = opus_path.replace(".opus", ".mp3")
+    base_name = os.path.splitext(input_path)[0]
+    mp3_path = f"{base_name}.mp3"
     
     # Check if ffmpeg is installed/available is implicitly handled by subprocess.run failing
     subprocess.run(
-        ["ffmpeg", "-i", opus_path, "-y", mp3_path],
+        ["ffmpeg", "-i", input_path, "-y", mp3_path],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE

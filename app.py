@@ -2,7 +2,7 @@ import streamlit as st
 import tempfile
 import os
 from dotenv import load_dotenv
-from utils import convert_opus_to_mp3, cleanup_files, get_timestamp
+from utils import convert_to_mp3, cleanup_files, get_timestamp
 from api_client import AudioTranslator
 
 # Load environment variables
@@ -74,32 +74,42 @@ if 'target_language_name' not in st.session_state:
 with st.sidebar:
     st.title("⚙️ Settings")
     
-    # Try to get key from secrets or environment
-    default_api_key = ""
+    # API Key Logic
+    # 1. Try to get key from secrets
+    secrets_api_key = None
     try:
         if "OPENAI_API_KEY" in st.secrets:
-            default_api_key = st.secrets["OPENAI_API_KEY"]
+            secrets_api_key = st.secrets["OPENAI_API_KEY"]
     except Exception:
         pass
 
-    if not default_api_key and "OPENAI_API_KEY" in os.environ:
-        default_api_key = os.environ["OPENAI_API_KEY"]
+    # 2. Try environment variable if not in secrets
+    if not secrets_api_key and "OPENAI_API_KEY" in os.environ:
+        secrets_api_key = os.environ["OPENAI_API_KEY"]
 
-    api_key_input = st.text_input("OpenAI API Key", value=default_api_key, type="password", help="Enter your OpenAI API key here.")
+    # 3. Sidebar Input (allows override)
+    user_api_key = st.text_input("OpenAI API Key", type="password", help="Enter your OpenAI API key here. Leave empty to use the system key if available.")
     
-    # Clean the key: remove whitespace and quotes
-    api_key = api_key_input.strip().strip('"').strip("'")
+    # Final Key Determination
+    api_key = user_api_key.strip().strip('"').strip("'")
     
-    # Debug Info
-    with st.expander("🔑 Key Debug Info"):
-        if api_key:
-            st.write(f"Key Length: {len(api_key)}")
-            st.write(f"Prefix: {api_key[:7]}...")
-            st.write(f"Suffix: ...{api_key[-4:]}")
-            if api_key != api_key_input:
-                st.info("ℹ️ Key was automatically cleaned (whitespace/quotes removed).")
+    if not api_key:
+        api_key = secrets_api_key
+
+    # Status Indicators
+    if api_key:
+        if api_key == secrets_api_key and not user_api_key:
+             st.success("✅ Using system API key", icon="🔐")
         else:
-            st.warning("No API Key detected.")
+             st.success("✅ Using user-provided API key", icon="👤")
+        
+        # Debug Info (Safe)
+        with st.expander("🔑 Key Debug Info"):
+             st.write(f"Key Length: {len(api_key)}")
+             st.write(f"Prefix: {api_key[:7]}...")
+             st.write(f"Suffix: ...{api_key[-4:]}")
+    else:
+        st.warning("⚠️ No API Key found based. Please enter one.")
     
     st.markdown("---")
     st.markdown("### Language Options")
@@ -125,12 +135,12 @@ with st.sidebar:
 
 # Main UI
 st.markdown("<h1 class='main-header'>🎙️ Audio Translator</h1>", unsafe_allow_html=True)
-st.write("Upload an `.opus` audio file to transcribe and translate it.")
+st.write("Upload an audio file (opus, m4a, mp3, mp4, wav) to transcribe and translate it.")
 
-uploaded_file = st.file_uploader("Choose an audio file", type=["opus"])
+uploaded_file = st.file_uploader("Choose an audio file", type=["opus", "m4a", "mp3", "mp4", "wav"])
 
 if uploaded_file is not None:
-    st.audio(uploaded_file, format='audio/opus')
+    st.audio(uploaded_file)
     
     if st.button("Transcribe & Translate", type="primary"):
         if not api_key:
@@ -144,13 +154,17 @@ if uploaded_file is not None:
                 
                 with st.spinner("Processing audio..."):
                     # Save temp file
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".opus") as tmp_file:
+                    file_ext = os.path.splitext(uploaded_file.name)[1]
+                    if not file_ext:
+                        file_ext = ".opus" # Default fallback
+
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
                         tmp_file.write(uploaded_file.getvalue())
                         tmp_file_path = tmp_file.name
 
                     # Convert
                     st.info("Converting audio format...")
-                    mp3_file_path = convert_opus_to_mp3(tmp_file_path)
+                    mp3_file_path = convert_to_mp3(tmp_file_path)
 
                     # Transcribe
                     st.info("Transcribing...")
