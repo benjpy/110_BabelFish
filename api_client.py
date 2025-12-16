@@ -8,6 +8,17 @@ class AudioTranslator:
             raise ValueError("API Key is required.")
         self.client = OpenAI(api_key=api_key)
 
+    def validate_key(self):
+        """
+        Validates the API key by making a lightweight API call.
+        Returns True if valid, False otherwise.
+        """
+        try:
+            self.client.models.list()
+            return True
+        except Exception:
+            return False
+
     def _retry_api_call(self, func, *args, **kwargs):
         """Helper to retry API calls on connection error."""
         max_retries = 3

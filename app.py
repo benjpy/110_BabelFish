@@ -98,16 +98,29 @@ with st.sidebar:
 
     # Status Indicators
     if api_key:
-        if api_key == secrets_api_key and not user_api_key:
-             st.success("✅ Using system API key", icon="🔐")
+        # Validate Key
+        valid_key = False
+        try:
+            # We can use a temporary instance to check functionality
+            translator = AudioTranslator(api_key)
+            if translator.validate_key():
+                valid_key = True
+        except Exception:
+            pass
+
+        if valid_key:
+            if api_key == secrets_api_key and not user_api_key:
+                 st.success("✅ Using system API key", icon="🔐")
+            else:
+                 st.success("✅ Using user-provided API key", icon="👤")
+            
+            # Debug Info (Safe)
+            with st.expander("🔑 Key Debug Info"):
+                 st.write(f"Key Length: {len(api_key)}")
+                 st.write(f"Prefix: {api_key[:7]}...")
+                 st.write(f"Suffix: ...{api_key[-4:]}")
         else:
-             st.success("✅ Using user-provided API key", icon="👤")
-        
-        # Debug Info (Safe)
-        with st.expander("🔑 Key Debug Info"):
-             st.write(f"Key Length: {len(api_key)}")
-             st.write(f"Prefix: {api_key[:7]}...")
-             st.write(f"Suffix: ...{api_key[-4:]}")
+            st.error("❌ The provided API Key appears to be invalid.", icon="🚫")
     else:
         st.warning("⚠️ No API Key found based. Please enter one.")
     
